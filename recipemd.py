@@ -87,9 +87,13 @@ def stewart(soup):
 	writeFile(title, ingreds, instruct)
 
 
-def writeFile(title, ingreds, instruct):
+def writeFile(title, ingreds, instruct, summary='', tags=[]):
 	with codecs.open(title.lower().replace(' ', '-') + '.md', 'w', encoding="utf-8") as f:
 		f.write('# ' + title + '\n\n')
+		if(summary != ''):
+			f.write('{}{}\n\n'.format(summary))
+		if(tags != []):
+			f.write('*{}*\n\n'.format(', '.join(tags)))
 		f.write('---\n\n')
 		f.write('\n'.join(ingreds))
 		f.write('\n\n---\n\n')
