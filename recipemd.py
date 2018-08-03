@@ -90,9 +90,9 @@ def stewart(soup):
 def writeFile(title, ingreds, instruct):
     with codecs.open(title.lower().replace(' ', '-') + '.md', 'w', encoding="utf-8") as f:
         f.write('# ' + title + '\n\n')
-        f.write('## Zutaten' + '\n\n')
+        f.write('---\n\n')
         f.write('\n'.join(ingreds))
-        f.write('\n\n' + '## Zubereitung' + '\n\n')
+        f.write('\n\n---\n\n')
         f.write(instruct)
         print('File written as: "' + title.lower().replace(' ', '-') + '.md"')
 
