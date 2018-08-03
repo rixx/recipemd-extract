@@ -12,7 +12,7 @@ from argparse import RawTextHelpFormatter
 def chefkoch(soup):
     # title
     title = soup.find('h1', attrs={'class': 'page-title'}).text
-    if title == 'Fehler: Seite nicht gefunden' or 'Fehler: Rezept nicht gefunden':
+    if title == 'Fehler: Seite nicht gefunden' or title == 'Fehler: Rezept nicht gefunden':
         raise ValueError('No recipe found, check URL')
     # ingredients
     ingreds = []
