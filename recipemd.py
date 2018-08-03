@@ -19,6 +19,10 @@ def chefkoch(soup):
 	# servings and tags
 	servings= soup.find('input', attrs={'id':'divisor'}).attrs['value']
 	tags=['{} Portion{}'.format(servings, 'en' if int(servings) > 1 else '')]
+
+	tagcloud=soup.find('ul', attrs={'class':'tagcloud'})
+	for tag in tagcloud.find_all('a'):
+		tags.append(tag.text)
 	# ingredients
 	ingreds = []
 	table = soup.find('table', attrs={'class': 'incredients'})
