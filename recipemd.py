@@ -16,6 +16,9 @@ def chefkoch(soup):
 		raise ValueError('No recipe found, check URL')
 	# summary
 	summary = soup.find('div', attrs={'class': 'summary'}).text
+	# servings and tags
+	servings= soup.find('input', attrs={'id':'divisor'}).attrs['value']
+	tags=['{} Portion{}'.format(servings, 'en' if int(servings) > 1 else '')]
 	# ingredients
 	ingreds = []
 	table = soup.find('table', attrs={'class': 'incredients'})
@@ -29,7 +32,7 @@ def chefkoch(soup):
 	instruct = soup.find('div', attrs={'id': 'rezept-zubereitung'}).text  # only get text
 	instruct = instruct.strip()  # remove leadin and ending whitespace
 	# write to file
-	writeFile(title, ingreds, instruct, summary)
+	writeFile(title, ingreds, instruct, summary, tags)
 
 
 def allrecipes(soup):
