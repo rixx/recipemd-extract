@@ -109,7 +109,7 @@ def main():
         sys.exit(1)
     soup = BeautifulSoup(page.text, "html5lib")
 
-    if url.startswith('http://www.chefkoch.de/'):
+    if 'www.chefkoch.de/' in url:
         chefkoch(soup)
     elif url.startswith('http://allrecipes.com/'):
         allrecipes(soup)
