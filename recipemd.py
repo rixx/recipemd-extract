@@ -27,11 +27,15 @@ def chefkoch(soup):
 	ingreds = []
 	table = soup.find('table', attrs={'class': 'incredients'})
 	rows = table.find_all('tr')
+
+	ingreds=[]
 	for row in rows:
 		cols = row.find_all('td')
 		cols = [s.text.strip() for s in cols]
-		ingreds.append([ele for ele in cols if ele])  # get rid of empty values
-	ingreds = ['- ' + ' '.join(s) for s in ingreds]
+		if(cols[0] != ''):
+			ingreds.append('-*{}* {}'.format(cols[0],cols[1]))
+		else:
+			ingreds.append('-{}'.format(cols[1]))
 	# instructions
 	instruct = soup.find('div', attrs={'id': 'rezept-zubereitung'}).text  # only get text
 	instruct = instruct.strip()  # remove leadin and ending whitespace
