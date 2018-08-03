@@ -1,13 +1,10 @@
-## recipemd
+## recipemd-extract
 
-recipemd saves recipes from websites as markdown files.
+recipemd-extract extracts recipes from websites and saves them in the [recipemd](https://github.com/tstehr/recipemd/blob/master/specification.md) format. It is based on [recipemd-cli](https://github.com/dnlvgl/recipemd-cli).
 
 ## supported websites
 
-1. allrecipes.com
-2. chefkoch.de
-3. marthastewart.com
-4. brigitte.de/rezepte/
+1. chefkoch.de
 
 ## requirements
 - [beautifulsoup4](http://www.crummy.com/software/BeautifulSoup/)
