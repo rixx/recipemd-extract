@@ -14,6 +14,8 @@ def chefkoch(soup):
 	title = soup.find('h1', attrs={'class': 'page-title'}).text
 	if title == 'Fehler: Seite nicht gefunden' or title == 'Fehler: Rezept nicht gefunden':
 		raise ValueError('No recipe found, check URL')
+	# summary
+	summary = soup.find('div', attrs={'class': 'summary'}).text
 	# ingredients
 	ingreds = []
 	table = soup.find('table', attrs={'class': 'incredients'})
@@ -27,7 +29,7 @@ def chefkoch(soup):
 	instruct = soup.find('div', attrs={'id': 'rezept-zubereitung'}).text  # only get text
 	instruct = instruct.strip()  # remove leadin and ending whitespace
 	# write to file
-	writeFile(title, ingreds, instruct)
+	writeFile(title, ingreds, instruct, summary)
 
 
 def allrecipes(soup):
@@ -91,7 +93,7 @@ def writeFile(title, ingreds, instruct, summary='', tags=[]):
 	with codecs.open(title.lower().replace(' ', '-') + '.md', 'w', encoding="utf-8") as f:
 		f.write('# ' + title + '\n\n')
 		if(summary != ''):
-			f.write('{}{}\n\n'.format(summary))
+			f.write('{}\n\n'.format(summary))
 		if(tags != []):
 			f.write('*{}*\n\n'.format(', '.join(tags)))
 		f.write('---\n\n')
