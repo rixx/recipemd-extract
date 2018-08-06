@@ -9,6 +9,65 @@ import argparse
 from argparse import RawTextHelpFormatter
 from recipe import Recipe,Ingredient
 
+def yupitsvegan(soup):
+	# title
+	title = soup.find('h2', attrs={'class': 'wprm-recipe-name'}).text.strip()
+	# TODO: error handling
+	# summary
+	summary = soup.find('div',attrs={'class':'wprm-recipe-summary'}).text.strip()
+	# servings and tags
+	servings = soup.find('span',attrs={'class':'wprm-recipe-details wprm-recipe-servings'}).text.strip()
+	tags=['servings: {}'.format(servings)]
+	# ingredients
+	ingreds=[]
+	ingredGroups = soup.find_all('div', attrs={'class':'wprm-recipe-ingredient-group'})
+	for group in ingredGroups:
+		groupName=group.find('h4', attrs={'class':'wprm-recipe-group-name wprm-recipe-ingredient-group-name'}).text.strip()
+		ingreds.append('#### '+groupName)
+		groupIngreds=group.find_all('li', attrs={'class':'wprm-recipe-ingredient'})
+		for ingred in groupIngreds:
+			amount=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-amount'})
+			if amount:
+				amount=amount.text.strip()
+			else:
+				amount=''
+			unit=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-unit'})
+			if unit:
+				unit=unit.text.strip()
+			else:
+				unit=''
+			name=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-name'})
+			if name:
+				name=name.text.strip()
+			else:
+				name=''
+			notes=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-notes'})
+			if notes:
+				notes=notes.text.strip()
+			else:
+				notes=''
+			ingreds.append(Ingredient('{} {}'.format(name,notes).strip(), '{} {}'.format(amount, unit).strip()))
+
+	# instructions
+	instructions=''
+	instructGroups=soup.find_all('div',attrs={'class':'wprm-recipe-instruction-group'})
+	for group in instructGroups:
+		groupName=group.find('h4',attrs={'class':'wprm-recipe-group-name wprm-recipe-instruction-group-name'}).text.strip()
+		instructions = instructions + '#### ' + groupName + '\n'
+		
+		groupInstructs= group.find_all('li', attrs={'class':'wprm-recipe-instruction'})
+		for index,inst in enumerate(groupInstructs):
+			instructions = instructions + str(index+1) + '. ' + inst.text.strip() +'\n'
+	# notes
+	notesContainer = soup.find('div',attrs={'class':'wprm-recipe-notes-container'})
+	if notesContainer:
+		notesTitle = notesContainer.find('h3').text.strip()
+		instructions = instructions + '\n## ' + notesTitle
+		for p in notesContainer.find_all('p'):
+			instructions= instructions + '\n\n' + p.text.strip()
+
+
+	return Recipe(title, ingreds, instructions, summary, tags)
 
 def chefkoch(soup):
 	# title
@@ -56,6 +115,8 @@ def main():
 
 	if 'www.chefkoch.de/' in url:
 		chefkoch(soup).write(filename)
+	elif 'yupitsvegan.com' in url:
+		yupitsvegan(soup).write(filename)
 	else:
 		print ('Website not supported')
 
