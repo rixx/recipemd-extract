@@ -73,8 +73,10 @@ def yupitsvegan(soup):
 	instructions=''
 	instructGroups=soup.find_all('div',attrs={'class':'wprm-recipe-instruction-group'})
 	for group in instructGroups:
-		groupName=group.find('h4',attrs={'class':'wprm-recipe-group-name wprm-recipe-instruction-group-name'}).text.strip()
-		instructions = instructions + '#### ' + groupName + '\n'
+		groupName=group.find('h4',attrs={'class':'wprm-recipe-group-name wprm-recipe-instruction-group-name'})
+
+		if groupName:
+			instructions = instructions + '#### ' + groupName.text.strip() + '\n'
 		
 		groupInstructs= group.find_all('li', attrs={'class':'wprm-recipe-instruction'})
 		for index,inst in enumerate(groupInstructs):
