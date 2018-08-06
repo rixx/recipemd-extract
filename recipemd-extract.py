@@ -8,119 +8,35 @@ import sys
 import argparse
 from argparse import RawTextHelpFormatter
 from recipe import Recipe,Ingredient
-
-def yupitsvegan(soup):
-	# title
-	title = soup.find('h2', attrs={'class': 'wprm-recipe-name'}).text.strip()
-	# TODO: error handling
-	# summary
-	summary = soup.find('div',attrs={'class':'wprm-recipe-summary'}).text.strip()
-	# servings and tags
-	servings = soup.find('span',attrs={'class':'wprm-recipe-details wprm-recipe-servings'}).text.strip()
-	servingsUnit = soup.find('span', attrs={'class':'wprm-recipe-details-unit wprm-recipe-servings-unit'}).text.strip()
-	tags=['{} {}'.format(servings,servingsUnit)]
-
-	courseTags=soup.find('span',attrs={'class':'wprm-recipe-course'})
-	if courseTags:
-		courseTags=courseTags.text.split(',')
-	else:
-		courseTags=[]
-	cuisineTags=soup.find('span',attrs={'class':'wprm-recipe-cuisine'})
-	if cuisineTags:
-		cuisineTags=cuisineTags.text.split(',')
-	else:
-		cuisineTags=[]
-	keywords = soup.find('span',attrs={'class':'wprm-recipe-keyword'})
-	if keywords:
-		keywords=keywords.text.split(',')
-	else:
-		keywords=[]
-	for tag in courseTags + cuisineTags + keywords:
-		tags.append(tag.strip())
-	
-	# ingredients
-	ingreds=[]
-	ingredGroups = soup.find_all('div', attrs={'class':'wprm-recipe-ingredient-group'})
-	for group in ingredGroups:
-		groupName=group.find('h4', attrs={'class':'wprm-recipe-group-name wprm-recipe-ingredient-group-name'})
-		if(groupName):
-			ingreds.append('#### '+groupName.text.strip())
-		groupIngreds=group.find_all('li', attrs={'class':'wprm-recipe-ingredient'})
-		for ingred in groupIngreds:
-			amount=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-amount'})
-			if amount:
-				amount=amount.text.strip()
-			else:
-				amount=''
-			unit=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-unit'})
-			if unit:
-				unit=unit.text.strip()
-			else:
-				unit=''
-			name=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-name'})
-			if name:
-				name=name.text.strip()
-			else:
-				name=''
-			notes=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-notes'})
-			if notes:
-				notes=notes.text.strip()
-			else:
-				notes=''
-			ingreds.append(Ingredient('{} {}'.format(name,notes).strip(), '{} {}'.format(amount, unit).strip()))
-
-	# instructions
-	instructions=''
-	instructGroups=soup.find_all('div',attrs={'class':'wprm-recipe-instruction-group'})
-	for group in instructGroups:
-		groupName=group.find('h4',attrs={'class':'wprm-recipe-group-name wprm-recipe-instruction-group-name'})
-
-		if groupName:
-			instructions = instructions + '#### ' + groupName.text.strip() + '\n'
-		
-		groupInstructs= group.find_all('li', attrs={'class':'wprm-recipe-instruction'})
-		for index,inst in enumerate(groupInstructs):
-			instructions = instructions + str(index+1) + '. ' + inst.text.strip() +'\n'
-	# notes
-	notesContainer = soup.find('div',attrs={'class':'wprm-recipe-notes-container'})
-	if notesContainer:
-		notesTitle = notesContainer.find('h3').text.strip()
-		instructions = instructions + '\n## ' + notesTitle
-		for p in notesContainer.find_all('p'):
-			instructions= instructions + '\n\n' + p.text.strip()
+import importlib
+import os
 
 
-	return Recipe(title, ingreds, instructions, summary, tags)
+def extract(url):
+	try:
+		page = requests.get(url)
+	except Exception:
+		print('No valid URL')
+		sys.exit(1)
+	soup = BeautifulSoup(page.text, "html5lib")
 
-def chefkoch(soup):
-	# title
-	title = soup.find('h1', attrs={'class': 'page-title'}).text
-	if title == 'Fehler: Seite nicht gefunden' or title == 'Fehler: Rezept nicht gefunden':
-		raise ValueError('No recipe found, check URL')
-	# summary
-	summary = soup.find('div', attrs={'class': 'summary'}).text
-	# servings and tags
-	servings= soup.find('input', attrs={'id':'divisor'}).attrs['value']
-	tags=['{} Portion{}'.format(servings, 'en' if int(servings) > 1 else '')]
+	pluginFilelist=os.listdir(os.path.dirname(os.path.realpath(__file__))+'/plugins')
 
-	tagcloud=soup.find('ul', attrs={'class':'tagcloud'})
-	for tag in tagcloud.find_all('a'):
-		tags.append(tag.text)
-	# ingredients
-	ingreds = []
-	table = soup.find('table', attrs={'class': 'incredients'})
-	rows = table.find_all('tr')
+	for pluginFile in pluginFilelist:
+		if(pluginFile.endswith('.py')):
+			pluginName='.'+pluginFile[:-3]
 
-	ingreds=[]
-	for row in rows:
-		cols = row.find_all('td')
-		cols = [s.text.strip() for s in cols]
-		ingreds.append(Ingredient(cols[1],cols[0]))
-	# instructions
-	instruct = soup.find('div', attrs={'id': 'rezept-zubereitung'}).text  # only get text
-	instruct = instruct.strip()  # remove leadin and ending whitespace
-	# write to file
-	return Recipe(title, ingreds, instruct, summary, tags)
+			try:
+				plugin=importlib.import_module(pluginName,'plugins')
+				if plugin.urlValid(url):
+					plugin.Ingredient=Ingredient
+					plugin.Recipe=Recipe
+					recipe=plugin.extract(soup)
+					if isinstance(recipe,Recipe):
+						return recipe
+			except Exception as e:
+				print('In plugin "',pluginName,'": Error parsing recipe:',e)
+
 
 def main():
 	parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
@@ -129,19 +45,13 @@ def main():
 	args = parser.parse_args()
 	url = args.url
 	filename = args.filename
-	try:
-		page = requests.get(url)
-	except Exception:
-		print('No valid URL')
-		sys.exit(1)
-	soup = BeautifulSoup(page.text, "html5lib")
 
-	if 'www.chefkoch.de/' in url:
-		chefkoch(soup).write(filename)
-	elif 'yupitsvegan.com' in url:
-		yupitsvegan(soup).write(filename)
+	recipe=extract(url)
+
+	if(recipe):
+		recipe.write(filename)
 	else:
-		print ('Website not supported')
+		print ('Could not extract recipe')
 
 
 if __name__ == "__main__":
