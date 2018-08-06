@@ -19,10 +19,7 @@ class Recipe:
 			f.write('---\n\n')
 
 			for ingredient in self.ingr:
-				if ingredient.amount:
-					f.write('- *{}* {}\n'.format(ingredient.amount,ingredient.name))
-				else:
-					f.write('- {}\n'.format(ingredient.name))
+				f.write(str(ingredient)+'\n')
 
 			f.write('\n---\n\n')
 			f.write(self.instr)
@@ -32,3 +29,8 @@ class Ingredient:
 	def __init__(self, name, amount=None):
 		self.name=name
 		self.amount=amount
+	def __str__(self):
+		if self.amount:
+			return '- *{}* {}'.format(self.amount,self.name)
+		else:
+			return '- {}'.format(self.name)
