@@ -20,9 +20,21 @@ def yupitsvegan(soup):
 	servingsUnit = soup.find('span', attrs={'class':'wprm-recipe-details-unit wprm-recipe-servings-unit'}).text.strip()
 	tags=['{} {}'.format(servings,servingsUnit)]
 
-	courseTags=soup.find('span',attrs={'class':'wprm-recipe-course'}).text.split(',')
-	cuisineTags=soup.find('span',attrs={'class':'wprm-recipe-cuisine'}).text.split(',')
-	keywords = soup.find('span',attrs={'class':'wprm-recipe-keyword'}).text.split(',')
+	courseTags=soup.find('span',attrs={'class':'wprm-recipe-course'})
+	if courseTags:
+		courseTags=courseTags.text.split(',')
+	else:
+		courseTags=[]
+	cuisineTags=soup.find('span',attrs={'class':'wprm-recipe-cuisine'})
+	if cuisineTags:
+		cuisineTags=cuisineTags.text.split(',')
+	else:
+		cuisineTags=[]
+	keywords = soup.find('span',attrs={'class':'wprm-recipe-keyword'})
+	if keywords:
+		keywords=keywords.text.split(',')
+	else:
+		keywords=[]
 	for tag in courseTags + cuisineTags + keywords:
 		tags.append(tag.strip())
 	
