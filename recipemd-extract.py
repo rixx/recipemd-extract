@@ -17,13 +17,22 @@ def yupitsvegan(soup):
 	summary = soup.find('div',attrs={'class':'wprm-recipe-summary'}).text.strip()
 	# servings and tags
 	servings = soup.find('span',attrs={'class':'wprm-recipe-details wprm-recipe-servings'}).text.strip()
-	tags=['servings: {}'.format(servings)]
+	servingsUnit = soup.find('span', attrs={'class':'wprm-recipe-details-unit wprm-recipe-servings-unit'}).text.strip()
+	tags=['{} {}'.format(servings,servingsUnit)]
+
+	courseTags=soup.find('span',attrs={'class':'wprm-recipe-course'}).text.split(',')
+	cuisineTags=soup.find('span',attrs={'class':'wprm-recipe-cuisine'}).text.split(',')
+	keywords = soup.find('span',attrs={'class':'wprm-recipe-keyword'}).text.split(',')
+	for tag in courseTags + cuisineTags + keywords:
+		tags.append(tag.strip())
+	
 	# ingredients
 	ingreds=[]
 	ingredGroups = soup.find_all('div', attrs={'class':'wprm-recipe-ingredient-group'})
 	for group in ingredGroups:
-		groupName=group.find('h4', attrs={'class':'wprm-recipe-group-name wprm-recipe-ingredient-group-name'}).text.strip()
-		ingreds.append('#### '+groupName)
+		groupName=group.find('h4', attrs={'class':'wprm-recipe-group-name wprm-recipe-ingredient-group-name'})
+		if(groupName):
+			ingreds.append('#### '+groupName.text.strip())
 		groupIngreds=group.find_all('li', attrs={'class':'wprm-recipe-ingredient'})
 		for ingred in groupIngreds:
 			amount=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-amount'})
