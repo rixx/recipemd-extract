@@ -1,3 +1,25 @@
+import requests
+from bs4 import BeautifulSoup
+
+def getJson(url,recipeId):
+	# remove queries, fragments
+	url=url.split('?')[0]
+	url=url.split('#')[0]
+
+	if(url.lower().startswith('http://') or url.lower().startswith('https://')):
+		splitted=url.split('/')
+		url = splitted[0] + '//' + splitted[2]
+	
+	r = requests.get(url + '/wp-json/wp/v2/wprm_recipe/' + recipeId)
+
+	if(r.ok):
+		return r.json()
+	else:
+		return None
+	
+def getText(html):
+	return BeautifulSoup(html,'html5lib').text.strip()
+
 def extract(url,soup):
 	recipe_id_element = soup.find(attrs={'data-recipe-id':True,'class':'wprm-recipe-container'})
 
@@ -6,11 +28,53 @@ def extract(url,soup):
 
 	recipe_id = recipe_id_element.attrs['data-recipe-id']
 
-	# TODO: extract the json
+	data=getJson(url,recipe_id)
+
+	try:
+		# title
+		title = getText(data['recipe']['name'])
+		# summary
+		summary = getText(data['recipe']['summary'])
+		# servings and tags
+		servings = data['recipe']['servings']
+		servings_unit = data['recipe']['servings_unit']
+		
+		tags = ['{} {}'.format(servings,servings_unit).strip()]
+
+		for tagGroup in data['recipe']['tags'].values():
+			for tag in tagGroup:
+				tags.append(tag['name'])
+		# ingredients
+		ingredients=[]
+
+		for ingredGroup in data['recipe']['ingredients']:
+			if 'name' in ingredGroup:
+				ingredients.append('#### ' + getText(ingredGroup['name']))
+			for ingred in ingredGroup['ingredients']:
+				amount = '{} {}'.format(ingred['amount'],ingred['unit']).strip()
+				name = getText('{} {}'.format(ingred['name'],ingred['notes']))
+				if amount == '':
+					amount=None
+				ingredients.append(Ingredient(name,amount))
+		# instructions
+		instructions = ''
+
+		for instrGroup in data['recipe']['instructions']:
+			if 'name' in instrGroup:
+				instructions = instructions + '#### ' + getText(instrGroup['name']) + '\n'
+			for index,instr in enumerate(instrGroup['instructions']):
+				instructions = instructions + '{}. {}\n'.format(index + 1,getText(instr['text']))
+
+		if 'notes' in data['recipe']:
+			instructions = instructions + '\n## Recipe Notes\n\n' + getText(data['recipe']['notes'])
+
+		return Recipe(title, ingredients, instructions, summary, tags)
+	except Exception as e:
+		print('failed to extract json:',e)
+	# if the json extraction fails, try to extract data from website
 
 	# title
 	title = soup.find(attrs={'class': 'wprm-recipe-name'}).text.strip()
-	# TODO: error handling
 	# summary
 	summary = soup.find('div',attrs={'class':'wprm-recipe-summary'}).text.strip()
 	# servings and tags
