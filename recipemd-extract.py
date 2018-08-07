@@ -12,7 +12,7 @@ import importlib
 import os
 
 
-def extract(url):
+def extract(url, debug=False):
 	try:
 		page = requests.get(url)
 	except Exception:
@@ -35,6 +35,8 @@ def extract(url):
 					if isinstance(recipe,Recipe):
 						return recipe
 			except Exception as e:
+				if debug:
+					raise e
 				print('In plugin "',pluginName,'": Error parsing recipe:',e)
 
 
@@ -42,11 +44,12 @@ def main():
 	parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
 	parser.add_argument('url', help='URL of the recipe')
 	parser.add_argument('filename', help='the file to write to')
+	parser.add_argument('--debug',action='store_true', help='enables debug mode')
 	args = parser.parse_args()
 	url = args.url
 	filename = args.filename
 
-	recipe=extract(url)
+	recipe=extract(url,args.debug)
 
 	if(recipe):
 		recipe.write(filename)
