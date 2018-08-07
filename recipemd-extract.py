@@ -42,7 +42,7 @@ def extract(url, debug=False):
 def main():
 	parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
 	parser.add_argument('url', help='URL of the recipe')
-	parser.add_argument('filename', help='the file to write to')
+	parser.add_argument('filename', help='the file to write to',nargs='?',default=None)
 	parser.add_argument('--debug',action='store_true', help='enables debug mode')
 	args = parser.parse_args()
 	url = args.url

@@ -9,7 +9,8 @@ class Recipe:
 		self.tags=tags
 	def write(self, filename=None):
 		if not filename:
-			filename = '{}.md'.format(self.title.lower().replace(' ', '-'))
+			joinedTitle='_'.join(self.title.lower().split())
+			filename = ''.join(c for c in joinedTitle if (c.isalnum() or c in '._')) + '.md'
 		with codecs.open(filename, 'w', encoding="utf-8") as f:
 			f.write('# ' + self.title + '\n\n')
 			if(self.summary != ''):
