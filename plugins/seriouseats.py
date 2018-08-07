@@ -1,7 +1,7 @@
-def urlValid(url):
-	return 'seriouseats.com/recipes' in url
+def extract(url,soup):
+	if not 'seriouseats.com' in url:
+		return
 
-def extract(soup):
 	# title
 	title = soup.find('h1',attrs={'class':'title recipe-title fn'}).text.strip()
 

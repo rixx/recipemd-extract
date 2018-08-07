@@ -1,7 +1,7 @@
-def urlValid(url):
-	return 'chefkoch.de' in url
+def extract(url,soup):
+	if not 'chefkoch.de' in url:
+		return
 
-def extract(soup):
 	# title
 	title = soup.find('h1', attrs={'class': 'page-title'}).text
 	if title == 'Fehler: Seite nicht gefunden' or title == 'Fehler: Rezept nicht gefunden':

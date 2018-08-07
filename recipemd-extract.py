@@ -28,12 +28,11 @@ def extract(url, debug=False):
 
 			try:
 				plugin=importlib.import_module(pluginName,'plugins')
-				if plugin.urlValid(url):
-					plugin.Ingredient=Ingredient
-					plugin.Recipe=Recipe
-					recipe=plugin.extract(soup)
-					if isinstance(recipe,Recipe):
-						return recipe
+				plugin.Ingredient=Ingredient
+				plugin.Recipe=Recipe
+				recipe=plugin.extract(url,soup)
+				if isinstance(recipe,Recipe):
+					return recipe
 			except Exception as e:
 				if debug:
 					raise e

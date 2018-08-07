@@ -1,9 +1,15 @@
-def urlValid(url):
-	return 'yupitsvegan.com' in url
+def extract(url,soup):
+	recipe_id_element = soup.find(attrs={'data-recipe-id':True,'class':'wprm-recipe-container'})
 
-def extract(soup):
+	if not recipe_id_element:
+		return
+
+	recipe_id = recipe_id_element.attrs['data-recipe-id']
+
+	# TODO: extract the json
+
 	# title
-	title = soup.find('h2', attrs={'class': 'wprm-recipe-name'}).text.strip()
+	title = soup.find(attrs={'class': 'wprm-recipe-name'}).text.strip()
 	# TODO: error handling
 	# summary
 	summary = soup.find('div',attrs={'class':'wprm-recipe-summary'}).text.strip()
@@ -76,7 +82,7 @@ def extract(soup):
 	# notes
 	notesContainer = soup.find('div',attrs={'class':'wprm-recipe-notes-container'})
 	if notesContainer:
-		notesTitle = notesContainer.find('h3').text.strip()
+		notesTitle = notesContainer.find(attrs={'class':'wprm-recipe-header'}).text.strip()
 		instructions = instructions + '\n## ' + notesTitle
 		for p in notesContainer.find_all('p'):
 			instructions= instructions + '\n\n' + p.text.strip()
