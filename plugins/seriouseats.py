@@ -1,3 +1,5 @@
+from recipemd.data import Recipe,Ingredient
+
 def extract(url,soup):
 	if not 'seriouseats.com' in url:
 		return
@@ -27,7 +29,7 @@ def extract(url,soup):
 	ingredients=[]
 
 	for ingred in soup.find_all('li',attrs={'class':'ingredient'}):
-		ingredients.append(Ingredient(ingred.text))
+		ingredients.append(Ingredient(name=ingred.text))
 
 	# instructions
 	instructions=''
@@ -39,4 +41,4 @@ def extract(url,soup):
 		instructions = instructions + stepNumber + ' ' + stepInstr + '\n'
 	instructions=instructions.strip()
 
-	return Recipe(title,ingredients,instructions,summary,tags)
+	return Recipe(title=title,ingredients=ingredients,instructions=instructions,description=summary,tags=tags)
