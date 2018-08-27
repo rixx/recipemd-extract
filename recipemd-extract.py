@@ -7,7 +7,7 @@ import codecs
 import sys
 import argparse
 from argparse import RawTextHelpFormatter
-from recipe import Recipe,Ingredient
+from recipemd.data import RecipeSerializer,Recipe,Ingredient
 import importlib
 import os
 
@@ -28,8 +28,6 @@ def extract(url, debug=False):
 
 			try:
 				plugin=importlib.import_module(pluginName,'plugins')
-				plugin.Ingredient=Ingredient
-				plugin.Recipe=Recipe
 				recipe=plugin.extract(url,soup)
 				if isinstance(recipe,Recipe):
 					return recipe
@@ -37,6 +35,13 @@ def extract(url, debug=False):
 				if debug:
 					raise e
 				print('In plugin "',pluginName,'": Error parsing recipe:',e)
+
+def writeRecipe(recipe, filename=None):
+	if not filename:
+		joinedTitle = '_'.join(recipe.title.lower().split())
+		filename = ''.join(c for c in joinedTitle if (c.isalnum() or c in '._')) + '.md'
+	with codecs.open(filename, 'w', encoding="utf-8") as f:
+		f.write(RecipeSerializer().serialize(recipe))
 
 
 def main():
@@ -51,7 +56,7 @@ def main():
 	recipe=extract(url,args.debug)
 
 	if(recipe):
-		recipe.write(filename)
+		writeRecipe(recipe, filename)
 	else:
 		print ('Could not extract recipe')
 

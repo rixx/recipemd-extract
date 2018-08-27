@@ -1,3 +1,5 @@
+from recipemd.data import RecipeParser,Recipe,Ingredient
+
 def extract(url,soup):
 	if not 'chefkoch.de' in url:
 		return
@@ -16,7 +18,6 @@ def extract(url,soup):
 	for tag in tagcloud.find_all('a'):
 		tags.append(tag.text)
 	# ingredients
-	ingreds = []
 	table = soup.find('table', attrs={'class': 'incredients'})
 	rows = table.find_all('tr')
 
@@ -24,9 +25,10 @@ def extract(url,soup):
 	for row in rows:
 		cols = row.find_all('td')
 		cols = [s.text.strip() for s in cols]
-		ingreds.append(Ingredient(cols[1],cols[0]))
+		unit, amount = RecipeParser.parse_amount(cols[0])
+		ingreds.append(Ingredient(name=cols[1],amount=amount,unit=unit))
 	# instructions
 	instruct = soup.find('div', attrs={'id': 'rezept-zubereitung'}).text  # only get text
 	instruct = instruct.strip()  # remove leadin and ending whitespace
 	# write to file
-	return Recipe(title, ingreds, instruct, summary, tags)
+	return Recipe(title=title, ingredients=ingreds, instructions=instruct, description=summary, tags=tags)
