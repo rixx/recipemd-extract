@@ -9,7 +9,11 @@ def extract(url,soup):
 	if title == 'Fehler: Seite nicht gefunden' or title == 'Fehler: Rezept nicht gefunden':
 		raise ValueError('No recipe found, check URL')
 	# summary
-	summary = soup.find('div', attrs={'class': 'summary'}).text
+	summaryTag = soup.find('div', attrs={'class': 'summary'})
+	if summaryTag:
+		summary=summaryTag.text
+	else:
+		summary=''
 	# servings and tags
 	servings= soup.find('input', attrs={'id':'divisor'}).attrs['value']
 	tags=['{} Portion{}'.format(servings, 'en' if int(servings) > 1 else '')]
