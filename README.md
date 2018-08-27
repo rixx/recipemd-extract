@@ -5,6 +5,8 @@ recipemd-extract extracts recipes from websites and saves them in the [recipemd]
 ## supported websites
 
 1. chefkoch.de
+2. seriouseats.com
+3. Any Wordpress blog using [WP Recipe Manager](https://en-ca.wordpress.org/plugins/wp-recipe-manager/)
 
 ## requirements
 
