@@ -10,10 +10,7 @@ def extract(url,soup):
 		raise ValueError('No recipe found, check URL')
 	# summary
 	summaryTag = soup.find('div', attrs={'class': 'summary'})
-	if summaryTag:
-		summary=summaryTag.text
-	else:
-		summary=''
+	summary = summaryTag.text if summaryTag else None
 	# servings and tags
 	servings= soup.find('input', attrs={'id':'divisor'}).attrs['value']
 	tags=['{} Portion{}'.format(servings, 'en' if int(servings) > 1 else '')]
