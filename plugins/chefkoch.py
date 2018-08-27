@@ -29,7 +29,7 @@ def extract(url,soup):
 	for row in rows:
 		cols = row.find_all('td')
 		cols = [s.text.strip() for s in cols]
-		unit, amount = RecipeParser.parse_amount(cols[0])
+		amount, unit = RecipeParser.parse_amount(cols[0])
 		ingreds.append(Ingredient(name=cols[1],amount=amount,unit=unit))
 	# instructions
 	instruct = soup.find('div', attrs={'id': 'rezept-zubereitung'}).text  # only get text
