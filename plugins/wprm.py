@@ -1,5 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
+from recipemd.data import RecipeParser,Recipe,Ingredient,IngredientGroup
+
 
 def getJson(url,recipeId):
 	# remove queries, fragments
@@ -48,27 +50,30 @@ def extract(url,soup):
 		ingredients=[]
 
 		for ingredGroup in data['recipe']['ingredients']:
+			group = IngredientGroup()
 			if 'name' in ingredGroup:
-				ingredients.append('#### ' + getText(ingredGroup['name']))
+				group.title = getText(ingredGroup['name'])
 			for ingred in ingredGroup['ingredients']:
-				amount = '{} {}'.format(ingred['amount'],ingred['unit']).strip()
+				amount, _ = RecipeParser.parse_amount(ingred['amount'])
+				unit = ingred['unit'].strip()
 				name = getText('{} {}'.format(ingred['name'],ingred['notes']))
-				if amount == '':
-					amount=None
-				ingredients.append(Ingredient(name,amount))
+				if unit == '':
+					unit=None
+				group.children.append(Ingredient(name,amount,unit))
+			ingredients.append(group)
 		# instructions
 		instructions = ''
 
 		for instrGroup in data['recipe']['instructions']:
 			if 'name' in instrGroup:
-				instructions = instructions + '#### ' + getText(instrGroup['name']) + '\n'
+				instructions = instructions + '## ' + getText(instrGroup['name']) + '\n'
 			for index,instr in enumerate(instrGroup['instructions']):
 				instructions = instructions + '{}. {}\n'.format(index + 1,getText(instr['text']))
 
 		if 'notes' in data['recipe']:
 			instructions = instructions + '\n## Recipe Notes\n\n' + getText(data['recipe']['notes'])
 
-		return Recipe(title, ingredients, instructions, summary, tags)
+		return Recipe(title=title, ingredients=ingredients, instructions=instructions, description=summary, tags=tags)
 	except Exception as e:
 		print('failed to extract json:',e)
 	# if the json extraction fails, try to extract data from website
@@ -103,22 +108,23 @@ def extract(url,soup):
 	# ingredients
 	ingreds=[]
 	ingredGroups = soup.find_all('div', attrs={'class':'wprm-recipe-ingredient-group'})
-	for group in ingredGroups:
-		groupName=group.find('h4', attrs={'class':'wprm-recipe-group-name wprm-recipe-ingredient-group-name'})
+	for ingredGroup in ingredGroups:
+		group = IngredientGroup()
+		groupName=ingredGroup.find('h4', attrs={'class':'wprm-recipe-group-name wprm-recipe-ingredient-group-name'})
 		if(groupName):
-			ingreds.append('#### '+groupName.text.strip())
-		groupIngreds=group.find_all('li', attrs={'class':'wprm-recipe-ingredient'})
+			group.title = groupName.text.strip()
+		groupIngreds=ingredGroup.find_all('li', attrs={'class':'wprm-recipe-ingredient'})
 		for ingred in groupIngreds:
-			amount=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-amount'})
+			amount = ingred.find('span',attrs={'class':'wprm-recipe-ingredient-amount'})
 			if amount:
-				amount=amount.text.strip()
+				amount, _=RecipeParser.parse_amount(amount.text)
 			else:
-				amount=''
+				amount=None
 			unit=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-unit'})
 			if unit:
 				unit=unit.text.strip()
 			else:
-				unit=''
+				unit=None
 			name=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-name'})
 			if name:
 				name=name.text.strip()
@@ -129,18 +135,19 @@ def extract(url,soup):
 				notes=notes.text.strip()
 			else:
 				notes=''
-			ingreds.append(Ingredient('{} {}'.format(name,notes).strip(), '{} {}'.format(amount, unit).strip()))
+			group.children.append(Ingredient('{} {}'.format(name,notes).strip(), amount=amount, unit=unit))
+		ingreds.append(group)
 
 	# instructions
 	instructions=''
 	instructGroups=soup.find_all('div',attrs={'class':'wprm-recipe-instruction-group'})
-	for group in instructGroups:
-		groupName=group.find('h4',attrs={'class':'wprm-recipe-group-name wprm-recipe-instruction-group-name'})
+	for ingredGroup in instructGroups:
+		groupName=ingredGroup.find('h4',attrs={'class':'wprm-recipe-group-name wprm-recipe-instruction-group-name'})
 
 		if groupName:
-			instructions = instructions + '#### ' + groupName.text.strip() + '\n'
+			instructions = instructions + '## ' + groupName.text.strip() + '\n'
 		
-		groupInstructs= group.find_all('li', attrs={'class':'wprm-recipe-instruction'})
+		groupInstructs= ingredGroup.find_all('li', attrs={'class':'wprm-recipe-instruction'})
 		for index,inst in enumerate(groupInstructs):
 			instructions = instructions + str(index+1) + '. ' + inst.text.strip() +'\n'
 	# notes
@@ -152,4 +159,4 @@ def extract(url,soup):
 			instructions= instructions + '\n\n' + p.text.strip()
 
 
-	return Recipe(title, ingreds, instructions, summary, tags)
+	return Recipe(title=title, ingredients=ingreds, instructions=instructions, description=summary, tags=tags)
