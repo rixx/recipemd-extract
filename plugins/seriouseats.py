@@ -5,7 +5,7 @@ def extract(url,soup):
 		return
 
 	# title
-	title = soup.find('h1',attrs={'class':'title recipe-title fn'}).text.strip()
+	title = soup.find('h1',attrs={'class':'title recipe-title'}).text.strip()
 
 	# summary
 	summary=''
