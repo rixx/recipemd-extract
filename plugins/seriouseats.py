@@ -1,4 +1,8 @@
-from recipemd.data import Recipe,Ingredient
+import re
+from decimal import Decimal
+
+from recipemd.data import Recipe, Ingredient, RecipeParser, Amount
+
 
 def extract(url,soup):
 	if not 'seriouseats.com' in url:
@@ -17,11 +21,16 @@ def extract(url,soup):
 			summary = summary + par.text + '\n\n'
 	summary=summary.strip()
 
-	# servings and tags
-	servings=soup.find('span',attrs={'class':'info yield'}).text
+	# servings
+	yields = []
 
-	tags=[servings]
+	servings = soup.find('span',attrs={'class':'info yield'}).text
+	servings_factor = re.compile("\d+").findall(servings)
+	if servings_factor:
+		yields.append(Amount(Decimal(servings_factor[0]), 'servings'))
 
+	# tags
+	tags=[]
 	for tag in soup.find_all('a',attrs={'class':'tag'}):
 		tags.append(tag.text)
 
@@ -41,4 +50,4 @@ def extract(url,soup):
 		instructions = instructions + stepNumber + ' ' + stepInstr + '\n'
 	instructions=instructions.strip()
 
-	return Recipe(title=title,ingredients=ingredients,instructions=instructions,description=summary,tags=tags)
+	return Recipe(title=title,ingredients=ingredients,instructions=instructions,description=summary,tags=tags,yields=yields)
