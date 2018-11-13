@@ -38,11 +38,13 @@ def extract(url,soup):
 		# summary
 		summary = getText(data['recipe']['summary'])
 		# servings and tags
-		servings = data['recipe']['servings']
-		servings_unit = data['recipe']['servings_unit']
-		
-		tags = ['{} {}'.format(servings,servings_unit).strip()]
+		servingsAmount = RecipeParser.parse_amount(data['recipe']['servings'])
+		servingsUnit = data['recipe']['servings_unit']
+		if servingsUnit != "":
+			servingsAmount.unit = servingsUnit
+		yields = [servingsAmount]
 
+		tags = []
 		for tagGroup in data['recipe']['tags'].values():
 			for tag in tagGroup:
 				tags.append(tag['name'])
@@ -54,12 +56,12 @@ def extract(url,soup):
 			if 'name' in ingredGroup:
 				group.title = getText(ingredGroup['name'])
 			for ingred in ingredGroup['ingredients']:
-				amount, _ = RecipeParser.parse_amount(ingred['amount'])
+				amount = RecipeParser.parse_amount(ingred['amount'])
 				unit = ingred['unit'].strip()
+				if unit != '':
+					amount.unit = unit
 				name = getText('{} {}'.format(ingred['name'],ingred['notes']))
-				if unit == '':
-					unit=None
-				group.children.append(Ingredient(name,amount,unit))
+				group.children.append(Ingredient(name,amount))
 			ingredients.append(group)
 		# instructions
 		instructions = ''
@@ -73,7 +75,7 @@ def extract(url,soup):
 		if 'notes' in data['recipe']:
 			instructions = instructions + '\n## Recipe Notes\n\n' + getText(data['recipe']['notes'])
 
-		return Recipe(title=title, ingredients=ingredients, instructions=instructions, description=summary, tags=tags)
+		return Recipe(title=title, ingredients=ingredients, instructions=instructions, description=summary, tags=tags, yields=yields)
 	except Exception as e:
 		print('failed to extract json:',e)
 	# if the json extraction fails, try to extract data from website
@@ -82,11 +84,19 @@ def extract(url,soup):
 	title = soup.find(attrs={'class': 'wprm-recipe-name'}).text.strip()
 	# summary
 	summary = soup.find('div',attrs={'class':'wprm-recipe-summary'}).text.strip()
-	# servings and tags
-	servings = soup.find('span',attrs={'class':'wprm-recipe-details wprm-recipe-servings'}).text.strip()
-	servingsUnit = soup.find('span', attrs={'class':'wprm-recipe-details-unit wprm-recipe-servings-unit'}).text.strip()
-	tags=['{} {}'.format(servings,servingsUnit)]
 
+	# yields
+	yields = []
+	servings = soup.find('span',attrs={'class':'wprm-recipe-details wprm-recipe-servings'})
+	if servings:
+		servingsAmount = RecipeParser.parse_amount(servings.text.strip())
+		servingsUnit = soup.find('span', attrs={'class':'wprm-recipe-details-unit wprm-recipe-servings-unit'}).text.strip()
+		if servingsUnit != "":
+			servingsAmount.unit = servingsUnit
+		yields.append(servingsAmount)
+
+	# tags
+	tags=[]
 	courseTags=soup.find('span',attrs={'class':'wprm-recipe-course'})
 	if courseTags:
 		courseTags=courseTags.text.split(',')
@@ -117,14 +127,12 @@ def extract(url,soup):
 		for ingred in groupIngreds:
 			amount = ingred.find('span',attrs={'class':'wprm-recipe-ingredient-amount'})
 			if amount:
-				amount, _=RecipeParser.parse_amount(amount.text)
+				amount = RecipeParser.parse_amount(amount.text)
 			else:
 				amount=None
 			unit=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-unit'})
 			if unit:
-				unit=unit.text.strip()
-			else:
-				unit=None
+				amount.unit = unit.text
 			name=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-name'})
 			if name:
 				name=name.text.strip()
@@ -135,7 +143,7 @@ def extract(url,soup):
 				notes=notes.text.strip()
 			else:
 				notes=''
-			group.children.append(Ingredient('{} {}'.format(name,notes).strip(), amount=amount, unit=unit))
+			group.children.append(Ingredient('{} {}'.format(name,notes).strip(), amount=amount))
 		ingreds.append(group)
 
 	# instructions
@@ -159,4 +167,4 @@ def extract(url,soup):
 			instructions= instructions + '\n\n' + p.text.strip()
 
 
-	return Recipe(title=title, ingredients=ingreds, instructions=instructions, description=summary, tags=tags)
+	return Recipe(title=title, ingredients=ingreds, instructions=instructions, description=summary, tags=tags, yields=yields)
