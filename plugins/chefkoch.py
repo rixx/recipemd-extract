@@ -1,4 +1,7 @@
-from recipemd.data import RecipeParser,Recipe,Ingredient
+from decimal import Decimal
+
+from recipemd.data import RecipeParser, Recipe, Ingredient, Amount
+
 
 def extract(url,soup):
 	if not 'chefkoch.de' in url:
@@ -11,10 +14,12 @@ def extract(url,soup):
 	# summary
 	summaryTag = soup.find('div', attrs={'class': 'summary'})
 	summary = summaryTag.text if summaryTag else None
-	# servings and tags
+	# servings
 	servings= soup.find('input', attrs={'id':'divisor'}).attrs['value']
-	tags=['{} Portion{}'.format(servings, 'en' if int(servings) > 1 else '')]
+	yields=[Amount(Decimal(servings), f'Portion{"en" if int(servings) > 1 else ""}')]
 
+	# tags
+	tags=[]
 	tagcloud=soup.find('ul', attrs={'class':'tagcloud'})
 	for tag in tagcloud.find_all('a'):
 		tags.append(tag.text)
@@ -26,10 +31,10 @@ def extract(url,soup):
 	for row in rows:
 		cols = row.find_all('td')
 		cols = [s.text.strip() for s in cols]
-		amount, unit = RecipeParser.parse_amount(cols[0])
-		ingreds.append(Ingredient(name=cols[1],amount=amount,unit=unit))
+		amount = RecipeParser.parse_amount(cols[0])
+		ingreds.append(Ingredient(name=cols[1],amount=amount))
 	# instructions
 	instruct = soup.find('div', attrs={'id': 'rezept-zubereitung'}).text  # only get text
 	instruct = instruct.strip()  # remove leadin and ending whitespace
 	# write to file
-	return Recipe(title=title, ingredients=ingreds, instructions=instruct, description=summary, tags=tags)
+	return Recipe(title=title, ingredients=ingreds, instructions=instruct, description=summary, tags=tags, yields=yields)
