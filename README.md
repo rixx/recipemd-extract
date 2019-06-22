@@ -14,6 +14,7 @@ recipemd-extract extracts recipes from websites and saves them in the [recipemd]
 - [beautifulsoup4](http://www.crummy.com/software/BeautifulSoup/)
 - [requests](http://docs.python-requests.org/en/latest/user/install/)
 - [html5lib](https://github.com/html5lib/html5lib-python)
+- [scrape-schema-recipe](https://github.com/micahcochran/scrape-schema-recipe)
 
 ## usage
 
