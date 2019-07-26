@@ -4,7 +4,11 @@ from recipemd.data import Recipe, Ingredient, RecipeParser
 
 
 def extract(url, _):
-	json_recipes = scrape_schema_recipe.scrape_url(url, python_objects=True)
+	try:
+		json_recipes = scrape_schema_recipe.scrape_url(url, python_objects=True)
+	except:
+		return None
+
 	if len(json_recipes) == 0:
 		return None
 	json_recipe = json_recipes[0]
