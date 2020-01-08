@@ -21,7 +21,10 @@ def extract(url, _):
 	if "recipeCuisine" in json_recipe:
 		tags.append(json_recipe["recipeCuisine"])
 	if "keywords" in json_recipe:
-		tags.extend(kw.strip() for kw in json_recipe["keywords"].split(','))
+		kw = json_recipe["keywords"]
+		if isinstance(kw, str):
+			kw = kw.split(',')
+		append_or_extend(tags, kw)
 
 	description_parts = []
 	if "description" in json_recipe:
