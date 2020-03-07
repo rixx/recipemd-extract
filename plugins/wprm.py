@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import requests
 from bs4 import BeautifulSoup
 from recipemd.data import RecipeParser,Recipe,Ingredient,IngredientGroup
@@ -41,7 +43,7 @@ def extract(url,soup):
 		servingsAmount = RecipeParser.parse_amount(data['recipe']['servings'])
 		servingsUnit = data['recipe']['servings_unit']
 		if servingsUnit != "":
-			servingsAmount.unit = servingsUnit
+			servingsAmount = replace(servingsAmount, unit=servingsUnit)
 		yields = [servingsAmount]
 
 		tags = []
@@ -52,16 +54,19 @@ def extract(url,soup):
 		ingredients=[]
 
 		for ingredGroup in data['recipe']['ingredients']:
-			group = IngredientGroup()
+			children = []
 			if 'name' in ingredGroup:
-				group.title = getText(ingredGroup['name'])
+				title = getText(ingredGroup['name'])
+			else:
+				title = None
 			for ingred in ingredGroup['ingredients']:
 				amount = RecipeParser.parse_amount(ingred['amount'])
 				unit = ingred['unit'].strip()
 				if unit != '':
-					amount.unit = unit
+					amount = replace(amount, unit=unit)
 				name = getText('{} {}'.format(ingred['name'],ingred['notes']))
-				group.children.append(Ingredient(name,amount))
+				children.append(Ingredient(name,amount))
+			group = IngredientGroup(title=title, ingredients=children)
 			ingredients.append(group)
 		# instructions
 		instructions = ''
@@ -92,7 +97,7 @@ def extract(url,soup):
 		servingsAmount = RecipeParser.parse_amount(servings.text.strip())
 		servingsUnit = soup.find('span', attrs={'class':'wprm-recipe-details-unit wprm-recipe-servings-unit'}).text.strip()
 		if servingsUnit != "":
-			servingsAmount.unit = servingsUnit
+			servingsAmount = replace(servingsAmount, unit=servingsUnit)
 		yields.append(servingsAmount)
 
 	# tags
@@ -119,11 +124,13 @@ def extract(url,soup):
 	ingreds=[]
 	ingredGroups = soup.find_all('div', attrs={'class':'wprm-recipe-ingredient-group'})
 	for ingredGroup in ingredGroups:
-		group = IngredientGroup()
 		groupName=ingredGroup.find('h4', attrs={'class':'wprm-recipe-group-name wprm-recipe-ingredient-group-name'})
 		if(groupName):
-			group.title = groupName.text.strip()
+			title = groupName.text.strip()
+		else:
+			title = None
 		groupIngreds=ingredGroup.find_all('li', attrs={'class':'wprm-recipe-ingredient'})
+		children = []
 		for ingred in groupIngreds:
 			amount = ingred.find('span',attrs={'class':'wprm-recipe-ingredient-amount'})
 			if amount:
@@ -132,7 +139,7 @@ def extract(url,soup):
 				amount=None
 			unit=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-unit'})
 			if unit:
-				amount.unit = unit.text
+				amount=replace(amount, unit=unit.text)
 			name=ingred.find('span',attrs={'class':'wprm-recipe-ingredient-name'})
 			if name:
 				name=name.text.strip()
@@ -143,7 +150,8 @@ def extract(url,soup):
 				notes=notes.text.strip()
 			else:
 				notes=''
-			group.children.append(Ingredient('{} {}'.format(name,notes).strip(), amount=amount))
+			children.append(Ingredient('{} {}'.format(name,notes).strip(), amount=amount))
+		group = IngredientGroup(title=title, ingredients=children)
 		ingreds.append(group)
 
 	# instructions
