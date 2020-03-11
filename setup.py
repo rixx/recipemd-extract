@@ -5,8 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
 	name="recipemd-extract",
-	# TODO
-	version="TBD",
+	version="1.0.0",
 	author='AberDerBart',
 	author_email='nonatz@web.de',
 	description="Extracts recipes from websites and saves them in the RecipeMD format",
@@ -28,8 +27,7 @@ setuptools.setup(
 		],
 	},
 	classifiers=[
-		# TODO
-		"Development Status :: 5 - Production/Stable",
+		"Development Status :: 4 - Beta",
 		"Environment :: Console",
 		"Intended Audience :: End Users/Desktop",
 		"Programming Language :: Python :: 3",
