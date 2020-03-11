@@ -2,6 +2,14 @@
 
 recipemd-extract extracts recipes from websites and saves them in the [recipemd](https://github.com/tstehr/recipemd/blob/master/specification.md) format. It is based on [recipemd-cli](https://github.com/dnlvgl/recipemd-cli).
 
+## installation
+
+`pip install recipemd-extract`
+
+## usage
+
+`recipemd-extract 'url-of-recipe'`
+
 ## supported websites
 
 1. chefkoch.de
@@ -10,15 +18,4 @@ recipemd-extract extracts recipes from websites and saves them in the [recipemd]
 4. Any page supporting [recipe schema](https://schema.org/Recipe)
 5. Any page supported by [recipe-scrapers](https://github.com/hhursev/recipe-scrapers)
 
-## requirements
 
-- [recipemd](https://github.com/tstehr/recipemd)
-- [beautifulsoup4](http://www.crummy.com/software/BeautifulSoup/)
-- [requests](http://docs.python-requests.org/en/latest/user/install/)
-- [html5lib](https://github.com/html5lib/html5lib-python)
-- [scrape-schema-recipe](https://github.com/micahcochran/scrape-schema-recipe)
-- [recipe-scrapers](https://github.com/hhursev/recipe-scrapers)
-
-## usage
-
-`python recipemd.py 'url-of-recipe'`
