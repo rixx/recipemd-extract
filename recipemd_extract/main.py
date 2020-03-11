@@ -23,11 +23,11 @@ def extract(url, debug=False):
 	pluginFilelist=os.listdir(os.path.dirname(os.path.realpath(__file__))+'/plugins')
 
 	for pluginFile in pluginFilelist:
-		if(pluginFile.endswith('.py')):
+		if(pluginFile.endswith('.py') and pluginFile != "__init__.py"):
 			pluginName='.'+pluginFile[:-3]
 
 			try:
-				plugin=importlib.import_module(pluginName,'plugins')
+				plugin=importlib.import_module(pluginName,'recipemd_extract.plugins')
 				recipe=plugin.extract(url,soup)
 				if isinstance(recipe,Recipe):
 					return recipe
