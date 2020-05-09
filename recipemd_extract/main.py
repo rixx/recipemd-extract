@@ -16,7 +16,7 @@ def extract(url, debug=False):
 	try:
 		page = requests.get(url)
 	except Exception:
-		print('No valid URL')
+		print('No valid URL', file=sys.stderr)
 		sys.exit(1)
 	soup = BeautifulSoup(page.text, "html5lib")
 
@@ -34,29 +34,30 @@ def extract(url, debug=False):
 			except Exception as e:
 				if debug:
 					raise e
-				print('In plugin "',pluginName,'": Error parsing recipe:',e)
+				print('In plugin "',pluginName,'": Error parsing recipe:',e, file=sys.stderr)
 
-def writeRecipe(recipe, filename=None):
-	if not filename:
+def writeRecipe(recipe, file=None):
+	if not file:
 		joinedTitle = '_'.join(recipe.title.lower().split())
 		filename = ''.join(c for c in joinedTitle if (c.isalnum() or c in '._')) + '.md'
-	with codecs.open(filename, 'w', encoding="utf-8") as f:
-		f.write(RecipeSerializer().serialize(recipe))
+		file = codecs.open(filename, 'w', encoding="utf-8")
+	with file:
+		file.write(RecipeSerializer().serialize(recipe))
 
 
 def main():
 	parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
 	parser.add_argument('url', help='URL of the recipe')
-	parser.add_argument('filename', help='the file to write to',nargs='?',default=None)
+	parser.add_argument('file', help='the file to write to',nargs='?',default=None, type=argparse.FileType('w', encoding='UTF-8'))
 	parser.add_argument('--debug',action='store_true', help='enables debug mode')
 	args = parser.parse_args()
 	url = args.url
-	filename = args.filename
+	file = args.file
 
 	recipe=extract(url,args.debug)
 
 	if(recipe):
-		writeRecipe(recipe, filename)
+		writeRecipe(recipe, file)
 	else:
 		print ('Could not extract recipe')
 
