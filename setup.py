@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
 	name="recipemd-extract",
-	version="1.1.0",
+	version="1.1.1",
 	author='AberDerBart',
 	author_email='nonatz@web.de',
 	description="Extracts recipes from websites and saves them in the RecipeMD format",

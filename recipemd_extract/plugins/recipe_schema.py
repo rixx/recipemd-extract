@@ -31,9 +31,9 @@ def extract(url, _):
 		description_parts.append(json_recipe["description"])
 	if "image" in json_recipe:
 		if isinstance(json_recipe["image"], list):
-			description_parts.append(f'<img src="{json_recipe["image"][0]}" />')
+			description_parts.append(f'![]({json_recipe["image"][0]}")')
 		else:
-			description_parts.append(f'<img src="{json_recipe["image"]}" />')
+			description_parts.append(f'![]({json_recipe["image"]}")')
 
 	yields = []
 	if "recipeYield" in json_recipe:

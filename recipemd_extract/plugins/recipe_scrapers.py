@@ -9,7 +9,7 @@ def extract(url, _):
 		return None
 
 	try:
-		description = f'<img src="{scraper.image()}" />'
+		description = f'![]({scraper.image()})'
 	except NotImplementedError:
 		description = ''
 
