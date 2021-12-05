@@ -40,12 +40,15 @@ def extract(url, debug=False):
 	return "\n".join(errors)
 
 def writeRecipe(recipe, file=None):
-	if not file:
+	if file:
+		filename = file.name
+	else:
 		joinedTitle = '_'.join(recipe.title.lower().split())
 		filename = ''.join(c for c in joinedTitle if (c.isalnum() or c in '._')) + '.md'
 		file = codecs.open(filename, 'w', encoding="utf-8")
 	with file:
 		file.write(RecipeSerializer().serialize(recipe))
+	return filename
 
 
 def main():
@@ -59,8 +62,9 @@ def main():
 
 	recipe=extract(url,args.debug)
 
-	if(recipe):
-		writeRecipe(recipe, file)
+	if isinstance(recipe,Recipe):
+		result = writeRecipe(recipe, file)
+		print('Recipe written to ' + result)
 	else:
 		print(recipe, file=sys.stderr)
 		print ('Could not extract recipe')
