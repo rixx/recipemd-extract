@@ -21,6 +21,7 @@ def extract(url, debug=False):
 	soup = BeautifulSoup(page.text, "html5lib")
 
 	pluginFilelist=os.listdir(os.path.dirname(os.path.realpath(__file__))+'/plugins')
+	errors = []
 
 	for pluginFile in pluginFilelist:
 		if(pluginFile.endswith('.py') and pluginFile != "__init__.py"):
@@ -34,7 +35,9 @@ def extract(url, debug=False):
 			except Exception as e:
 				if debug:
 					raise e
-				print('In plugin "',pluginName,'": Error parsing recipe:',e, file=sys.stderr)
+				else:
+					errors.append('In plugin "' + pluginName + '": Error parsing recipe: ' + str(e))
+	return "\n".join(errors)
 
 def writeRecipe(recipe, file=None):
 	if not file:
@@ -59,6 +62,7 @@ def main():
 	if(recipe):
 		writeRecipe(recipe, file)
 	else:
+		print(recipe, file=sys.stderr)
 		print ('Could not extract recipe')
 
 
