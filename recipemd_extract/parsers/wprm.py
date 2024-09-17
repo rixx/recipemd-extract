@@ -1,3 +1,5 @@
+import urllib.parse
+from contextlib import suppress
 from dataclasses import replace
 
 import requests
@@ -5,109 +7,106 @@ from bs4 import BeautifulSoup
 from recipemd.data import Ingredient, IngredientGroup, Recipe, RecipeParser
 
 
-def getJson(url, recipeId):
-    # remove queries, fragments
-    url = url.split("?")[0]
-    url = url.split("#")[0]
-
-    if url.lower().startswith("http://") or url.lower().startswith("https://"):
-        splitted = url.split("/")
-        url = splitted[0] + "//" + splitted[2]
-
-    r = requests.get(url + "/wp-json/wp/v2/wprm_recipe/" + recipeId)
-
-    if r.ok:
-        return r.json()
-    else:
-        return None
+def getJson(url, recipe_id):
+    domain = urllib.parse.urlparse(url).netloc
+    json_url = f"https://{domain}/wp-json/wp/v2/wprm_recipe/{recipe_id}"
+    response = requests.get(json_url)
+    response.raise_for_status()
+    return response.json()
 
 
-def getText(html):
+def get_text(html):
     return BeautifulSoup(html, "html5lib").text.strip()
 
 
-def extract(url, soup):
+def extract_wordpress(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, "html5lib")
+
+    parsers = [
+        extract_wordpress_json,
+        extract_wordpress_html,
+    ]
+
+    recipe = None
+    for parser in parsers:
+        with suppress(Exception):
+            recipe = parser(soup, url)
+        if recipe:
+            return recipe
+
+
+def extract_wordpress_json(soup, url):
     recipe_id_element = soup.find(
         attrs={"data-recipe-id": True, "class": "wprm-recipe-container"}
     )
-
     if not recipe_id_element:
         return
 
     recipe_id = recipe_id_element.attrs["data-recipe-id"]
+    data = (url, recipe_id)
 
-    data = getJson(url, recipe_id)
+    title = get_text(data["recipe"]["name"])
+    summary = get_text(data["recipe"]["summary"])
+    servingsAmount = RecipeParser.parse_amount(data["recipe"]["servings"])
+    servingsUnit = data["recipe"]["servings_unit"]
+    if servingsUnit != "":
+        servingsAmount = replace(servingsAmount, unit=servingsUnit)
+    yields = [servingsAmount]
 
-    try:
-        # title
-        title = getText(data["recipe"]["name"])
-        # summary
-        summary = getText(data["recipe"]["summary"])
-        # servings and tags
-        servingsAmount = RecipeParser.parse_amount(data["recipe"]["servings"])
-        servingsUnit = data["recipe"]["servings_unit"]
-        if servingsUnit != "":
-            servingsAmount = replace(servingsAmount, unit=servingsUnit)
-        yields = [servingsAmount]
+    tags = []
+    for tagGroup in data["recipe"]["tags"].values():
+        for tag in tagGroup:
+            tags.append(tag["name"])
 
-        tags = []
-        for tagGroup in data["recipe"]["tags"].values():
-            for tag in tagGroup:
-                tags.append(tag["name"])
-        # ingredients
-        ingredients = []
+    ingredients = []
+    for ingredGroup in data["recipe"]["ingredients"]:
+        children = []
+        if "name" in ingredGroup:
+            title = get_text(ingredGroup["name"])
+        else:
+            title = None
+        for ingred in ingredGroup["ingredients"]:
+            amount = RecipeParser.parse_amount(ingred["amount"])
+            unit = ingred["unit"].strip()
+            if unit != "":
+                amount = replace(amount, unit=unit)
+            name = get_text("{} {}".format(ingred["name"], ingred["notes"]))
+            children.append(Ingredient(name, amount))
+        group = IngredientGroup(title=title, ingredients=children)
+        ingredients.append(group)
 
-        for ingredGroup in data["recipe"]["ingredients"]:
-            children = []
-            if "name" in ingredGroup:
-                title = getText(ingredGroup["name"])
-            else:
-                title = None
-            for ingred in ingredGroup["ingredients"]:
-                amount = RecipeParser.parse_amount(ingred["amount"])
-                unit = ingred["unit"].strip()
-                if unit != "":
-                    amount = replace(amount, unit=unit)
-                name = getText("{} {}".format(ingred["name"], ingred["notes"]))
-                children.append(Ingredient(name, amount))
-            group = IngredientGroup(title=title, ingredients=children)
-            ingredients.append(group)
-        # instructions
-        instructions = ""
-
-        for instrGroup in data["recipe"]["instructions"]:
-            if "name" in instrGroup:
-                instructions = instructions + "## " + getText(instrGroup["name"]) + "\n"
-            for index, instr in enumerate(instrGroup["instructions"]):
-                instructions = instructions + "{}. {}\n".format(
-                    index + 1, getText(instr["text"])
-                )
-
-        if "notes" in data["recipe"]:
-            instructions = (
-                instructions
-                + "\n## Recipe Notes\n\n"
-                + getText(data["recipe"]["notes"])
+    instructions = ""
+    for instrGroup in data["recipe"]["instructions"]:
+        if "name" in instrGroup:
+            instructions = instructions + "## " + get_text(instrGroup["name"]) + "\n"
+        for index, instr in enumerate(instrGroup["instructions"]):
+            instructions = instructions + "{}. {}\n".format(
+                index + 1, get_text(instr["text"])
             )
 
-        return Recipe(
-            title=title,
-            ingredients=ingredients,
-            instructions=instructions,
-            description=summary,
-            tags=tags,
-            yields=yields,
+    if "notes" in data["recipe"]:
+        instructions = (
+            instructions + "\n## Recipe Notes\n\n" + get_text(data["recipe"]["notes"])
         )
-    except Exception as e:
-        print("failed to extract json:", e)
-    # if the json extraction fails, try to extract data from website
 
-    # title
+    instructions += f"\n\n[Original Recipe]({url})"
+
+    return Recipe(
+        title=title,
+        ingredients=ingredients,
+        instructions=instructions,
+        description=summary,
+        tags=tags,
+        yields=yields,
+    )
+
+
+def extract_wordpress_html(soup, url):
     title = soup.find(attrs={"class": "wprm-recipe-name"}).text.strip()
-    # summary
     summary = soup.find("div", attrs={"class": "wprm-recipe-summary"}).text.strip()
 
-    # yields
     yields = []
     servings = soup.find(
         "span", attrs={"class": "wprm-recipe-details wprm-recipe-servings"}
@@ -122,7 +121,6 @@ def extract(url, soup):
             servingsAmount = replace(servingsAmount, unit=servingsUnit)
         yields.append(servingsAmount)
 
-    # tags
     tags = []
     courseTags = soup.find("span", attrs={"class": "wprm-recipe-course"})
     if courseTags:
@@ -141,8 +139,8 @@ def extract(url, soup):
         keywords = []
     for tag in courseTags + cuisineTags + keywords:
         tags.append(tag.strip())
+    tags = list(set(tags))
 
-    # ingredients
     ingreds = []
     ingredGroups = soup.find_all("div", attrs={"class": "wprm-recipe-ingredient-group"})
     for ingredGroup in ingredGroups:
@@ -185,7 +183,6 @@ def extract(url, soup):
         group = IngredientGroup(title=title, ingredients=children)
         ingreds.append(group)
 
-    # instructions
     instructions = ""
     instructGroups = soup.find_all(
         "div", attrs={"class": "wprm-recipe-instruction-group"}
@@ -208,7 +205,7 @@ def extract(url, soup):
             instructions = (
                 instructions + str(index + 1) + ". " + inst.text.strip() + "\n"
             )
-    # notes
+
     notesContainer = soup.find("div", attrs={"class": "wprm-recipe-notes-container"})
     if notesContainer:
         notesTitle = notesContainer.find(
@@ -217,6 +214,8 @@ def extract(url, soup):
         instructions = instructions + "\n## " + notesTitle
         for p in notesContainer.find_all("p"):
             instructions = instructions + "\n\n" + p.text.strip()
+
+    instructions += f"\n\n[Original Recipe]({url})"
 
     return Recipe(
         title=title,

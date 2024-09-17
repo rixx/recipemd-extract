@@ -1,15 +1,15 @@
 from recipemd.data import Ingredient, Recipe, RecipeParser
-from scrape_schema_recipe import RecipeScrapersExceptions, scrape_url
+from scrape_schema_recipe import scrape_url
 
 
-def extract(url, _):
+def extract_schema(url):
     try:
         json_recipes = scrape_url(url, python_objects=True)
-    except RecipeScrapersExceptions:
-        return None
+    except Exception:
+        return
 
     if len(json_recipes) == 0:
-        return None
+        return
     json_recipe = json_recipes[0]
 
     tags = []

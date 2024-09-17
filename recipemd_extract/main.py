@@ -1,62 +1,43 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import argparse
-import codecs
-import importlib
-import os
 import sys
 from argparse import RawTextHelpFormatter
+from contextlib import suppress
 
-import requests
-from bs4 import BeautifulSoup
 from recipemd.data import Recipe, RecipeSerializer
 
-
-def extract(url, debug=False):
-    try:
-        page = requests.get(url)
-    except Exception:
-        print("No valid URL", file=sys.stderr)
-        sys.exit(1)
-    soup = BeautifulSoup(page.text, "html5lib")
-
-    pluginFilelist = os.listdir(
-        os.path.dirname(os.path.realpath(__file__)) + "/plugins"
-    )
-    errors = []
-
-    for pluginFile in pluginFilelist:
-        if pluginFile.endswith(".py") and pluginFile != "__init__.py":
-            pluginName = "." + pluginFile[:-3]
-
-            try:
-                plugin = importlib.import_module(pluginName, "recipemd_extract.plugins")
-                recipe = plugin.extract(url, soup)
-                if isinstance(recipe, Recipe):
-                    return recipe
-            except Exception as e:
-                if debug:
-                    raise e
-                else:
-                    errors.append(
-                        'In plugin "'
-                        + pluginName
-                        + '": Error parsing recipe: '
-                        + str(e)
-                    )
-    return "\n".join(errors)
+from recipemd_extract.parsers.recipe_schema import extract_schema
+from recipemd_extract.parsers.recipe_scrapers import extract_recipe_scrapers
+from recipemd_extract.parsers.wprm import extract_wordpress
 
 
-def writeRecipe(recipe, file=None):
-    if file:
-        filename = file.name
-    else:
-        joinedTitle = "_".join(recipe.title.lower().split())
-        filename = "".join(c for c in joinedTitle if (c.isalnum() or c in "._")) + ".md"
-        file = codecs.open(filename, "w", encoding="utf-8")
-    with file:
-        file.write(RecipeSerializer().serialize(recipe))
+def extract(url):
+    # First, try to download the recipe with recipe_scrapers.
+    # Failing that, we fall back to JSON-LD parsing or checking if the page
+    # is a WordPress site with WP Recipe Maker.
+
+    parsers = [
+        extract_recipe_scrapers,
+        extract_schema,
+        extract_wordpress,
+    ]
+
+    recipe = None
+
+    for parser in parsers:
+        with suppress(Exception):
+            recipe = parser(url)
+        if recipe:
+            return recipe
+
+
+def write_recipe(recipe, filename=None):
+    if not filename:
+        filename = "_".join(recipe.title.lower().split())
+        filename = "".join(c for c in filename if (c.isalnum() or c in "._-")) + ".md"
+    with open(filename, "w") as fp:
+        fp.write(RecipeSerializer().serialize(recipe))
     return filename
 
 
@@ -64,25 +45,22 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument("url", help="URL of the recipe")
     parser.add_argument(
-        "file",
-        help="the file to write to",
+        "filename",
+        help="The file to write to – will be derived from the recipe title if not given",
         nargs="?",
         default=None,
-        type=argparse.FileType("w", encoding="UTF-8"),
     )
-    parser.add_argument("--debug", action="store_true", help="enables debug mode")
     args = parser.parse_args()
-    url = args.url
-    file = args.file
 
-    recipe = extract(url, args.debug)
+    recipe = extract(args.url)
 
     if isinstance(recipe, Recipe):
-        result = writeRecipe(recipe, file)
+        result = write_recipe(recipe, args.filename)
         print("Recipe written to " + result)
     else:
         print(recipe, file=sys.stderr)
         print("Could not extract recipe")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
