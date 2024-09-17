@@ -7,7 +7,7 @@ import codecs
 import sys
 import argparse
 from argparse import RawTextHelpFormatter
-from recipemd.data import RecipeSerializer,Recipe,Ingredient
+from recipemd.data import RecipeSerializer,Recipe
 import importlib
 import os
 
