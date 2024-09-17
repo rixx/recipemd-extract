@@ -1,10 +1,10 @@
-from recipe_scrapers import scrape_me, WebsiteNotImplementedError
+from recipe_scrapers import scrape_html, WebsiteNotImplementedError
 from recipemd.data import Recipe, RecipeParser, Ingredient
 
 
 def extract(url, _):
 	try:
-		scraper = scrape_me(url)
+		scraper = scrape_html(html=None, org_url=url, online=True)
 	except WebsiteNotImplementedError:
 		return None
 
