@@ -5,7 +5,7 @@ from recipemd.data import Recipe, Ingredient, Amount
 
 
 def extract(url,soup):
-	if not 'seriouseats.com' in url:
+	if 'seriouseats.com' not in url:
 		return
 
 	# title
@@ -17,7 +17,7 @@ def extract(url,soup):
 	summaryPars=soup.find('div',attrs={'class':'recipe-introduction-body'}).find_all('p')
 
 	for par in summaryPars:
-		if not 'caption' in par.attrs.get('class',[]):
+		if 'caption' not in par.attrs.get('class',[]):
 			summary = summary + par.text + '\n\n'
 	summary=summary.strip()
 

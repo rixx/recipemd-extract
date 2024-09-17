@@ -4,7 +4,7 @@ from recipemd.data import RecipeParser, Recipe, Ingredient, Amount
 
 
 def extract(url,soup):
-	if not 'chefkoch.de' in url:
+	if 'chefkoch.de' not in url:
 		return
 
 	# title
