@@ -1,7 +1,7 @@
 import re
 from decimal import Decimal
 
-from recipemd.data import Recipe, Ingredient, Amount
+from recipemd.data import Amount, Ingredient, Recipe
 
 
 def extract(url, soup):

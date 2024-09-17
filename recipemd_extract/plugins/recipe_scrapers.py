@@ -1,5 +1,5 @@
-from recipe_scrapers import scrape_html, WebsiteNotImplementedError
-from recipemd.data import Recipe, RecipeParser, Ingredient
+from recipe_scrapers import WebsiteNotImplementedError, scrape_html
+from recipemd.data import Ingredient, Recipe, RecipeParser
 
 
 def extract(url, _):

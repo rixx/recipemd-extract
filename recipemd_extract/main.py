@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from bs4 import BeautifulSoup
-import requests
-import codecs
-import sys
 import argparse
-from argparse import RawTextHelpFormatter
-from recipemd.data import RecipeSerializer, Recipe
+import codecs
 import importlib
 import os
+import sys
+from argparse import RawTextHelpFormatter
+
+import requests
+from bs4 import BeautifulSoup
+from recipemd.data import Recipe, RecipeSerializer
 
 
 def extract(url, debug=False):

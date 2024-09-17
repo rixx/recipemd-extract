@@ -1,6 +1,5 @@
 import scrape_schema_recipe
-
-from recipemd.data import Recipe, Ingredient, RecipeParser
+from recipemd.data import Ingredient, Recipe, RecipeParser
 
 
 def extract(url, _):

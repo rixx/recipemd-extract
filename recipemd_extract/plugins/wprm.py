@@ -2,7 +2,7 @@ from dataclasses import replace
 
 import requests
 from bs4 import BeautifulSoup
-from recipemd.data import RecipeParser, Recipe, Ingredient, IngredientGroup
+from recipemd.data import Ingredient, IngredientGroup, Recipe, RecipeParser
 
 
 def getJson(url, recipeId):
