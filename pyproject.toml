@@ -36,6 +36,7 @@ dev = [
   "check-manifest",
   "flake8",
   "flake8-bugbear",
+  "flake8-pyproject",
   "isort",
 ]
 

@@ -1,11 +1,11 @@
-import scrape_schema_recipe
 from recipemd.data import Ingredient, Recipe, RecipeParser
+from scrape_schema_recipe import RecipeScrapersExceptions, scrape_url
 
 
 def extract(url, _):
     try:
-        json_recipes = scrape_schema_recipe.scrape_url(url, python_objects=True)
-    except:
+        json_recipes = scrape_url(url, python_objects=True)
+    except RecipeScrapersExceptions:
         return None
 
     if len(json_recipes) == 0:
@@ -67,7 +67,7 @@ def create_instructions(instructions, level=2):
                 )
             child_instructions_list = "\n\n".join(child_instructions_list)
 
-            return f'{"#"*level} \n\n{child_instructions_list}'
+            return f'{"#" * level} \n\n{child_instructions_list}'
 
         if instruction_type == "HowToStep":
             return instructions["text"]
