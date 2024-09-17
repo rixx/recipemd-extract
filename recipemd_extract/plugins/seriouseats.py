@@ -25,7 +25,7 @@ def extract(url,soup):
 	yields = []
 
 	servings = soup.find('span',attrs={'class':'info yield'}).text
-	servings_factor = re.compile("\d+").findall(servings)
+	servings_factor = re.compile(r"\d+").findall(servings)
 	if servings_factor:
 		yields.append(Amount(Decimal(servings_factor[0]), 'servings'))
 
